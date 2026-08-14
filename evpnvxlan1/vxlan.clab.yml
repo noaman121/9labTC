@@ -1,0 +1,175 @@
+
+Topology.clab · YML
+name: evpn-vxlan-lab
+prefix: ''
+ 
+topology:
+ 
+  defaults:
+    kind: linux
+ 
+  kinds:
+    linux:
+      image: frrouting/frr:latest
+      binds:
+        - config/daemons:/etc/frr/daemons
+        - config/vtysh.conf:/etc/frr/vtysh.conf
+ 
+  nodes:
+ 
+    ### SPINE ###
+    spine1:
+      binds:
+        - config/spine1.conf:/etc/frr/frr.conf
+      exec:
+        - ip route del default
+        - ip addr del 127.0.0.1/8 dev lo
+ 
+    ### LEAF ###
+    leaf1:
+      binds:
+        - config/leaf1.conf:/etc/frr/frr.conf
+      exec:
+        - ip route del default
+        - ip addr del 127.0.0.1/8 dev lo
+        - ip link add TENANT-A type vrf table 4000
+        - ip link set TENANT-A up
+        - ip link add br10 type bridge
+        - ip link set br10 mtu 9500
+        - ip link set br10 up
+        - ip link add br4000 type bridge
+        - ip link set br4000 mtu 9500
+        - ip link set br4000 up
+        - ip link add vni4000 type vxlan local 10.0.0.1 dstport 4789 id 4000 nolearning
+        - ip link set vni4000 mtu 9500
+        - ip link set vni4000 master br4000 addrgenmode none
+        - ip link set vni4000 type bridge_slave neigh_suppress on learning off
+        - ip link set vni4000 up
+        - ip link add vni10010 type vxlan local 10.0.0.1 dstport 4789 id 10010 nolearning
+        - ip link set vni10010 mtu 9500
+        - ip link set vni10010 master br10 addrgenmode none
+        - ip link set vni10010 type bridge_slave neigh_suppress on learning off
+        - ip link set vni10010 up
+        - ip link add link eth2 name eth2.10 type vlan id 10
+        - ip link set eth2.10 master br10
+        - ip link set eth2.10 up
+        - ip link set eth2 up
+        - ip link set br10 master TENANT-A
+        - ip link set br10 addr 00:00:5e:00:01:01
+        - ip addr add 10.0.10.1/24 dev br10
+        - ip link set br4000 master TENANT-A
+        - ip link set br4000 addr 00:00:5e:00:40:01
+ 
+    leaf2:
+      binds:
+        - config/leaf2.conf:/etc/frr/frr.conf
+      exec:
+        - ip route del default
+        - ip addr del 127.0.0.1/8 dev lo
+        - ip link add TENANT-A type vrf table 4000
+        - ip link set TENANT-A up
+        - ip link add br20 type bridge
+        - ip link set br20 mtu 9500
+        - ip link set br20 up
+        - ip link add br4000 type bridge
+        - ip link set br4000 mtu 9500
+        - ip link set br4000 up
+        - ip link add vni4000 type vxlan local 10.0.0.2 dstport 4789 id 4000 nolearning
+        - ip link set vni4000 mtu 9500
+        - ip link set vni4000 master br4000 addrgenmode none
+        - ip link set vni4000 type bridge_slave neigh_suppress on learning off
+        - ip link set vni4000 up
+        - ip link add vni10020 type vxlan local 10.0.0.2 dstport 4789 id 10020 nolearning
+        - ip link set vni10020 mtu 9500
+        - ip link set vni10020 master br20 addrgenmode none
+        - ip link set vni10020 type bridge_slave neigh_suppress on learning off
+        - ip link set vni10020 up
+        - ip link add link eth2 name eth2.20 type vlan id 20
+        - ip link set eth2.20 master br20
+        - ip link set eth2.20 up
+        - ip link set eth2 up
+        - ip link set br20 master TENANT-A
+        - ip link set br20 addr 00:00:5e:00:02:01
+        - ip addr add 10.0.20.1/24 dev br20
+        - ip link set br4000 master TENANT-A
+        - ip link set br4000 addr 00:00:5e:00:40:02
+ 
+    leaf3:
+      binds:
+        - config/leaf3.conf:/etc/frr/frr.conf
+      exec:
+        - ip route del default
+        - ip addr del 127.0.0.1/8 dev lo
+        - ip link add TENANT-A type vrf table 4000
+        - ip link set TENANT-A up
+        - ip link add br10 type bridge
+        - ip link set br10 mtu 9500
+        - ip link set br10 up
+        - ip link add br4000 type bridge
+        - ip link set br4000 mtu 9500
+        - ip link set br4000 up
+        - ip link add vni4000 type vxlan local 10.0.0.3 dstport 4789 id 4000 nolearning
+        - ip link set vni4000 mtu 9500
+        - ip link set vni4000 master br4000 addrgenmode none
+        - ip link set vni4000 type bridge_slave neigh_suppress on learning off
+        - ip link set vni4000 up
+        - ip link add vni10010 type vxlan local 10.0.0.3 dstport 4789 id 10010 nolearning
+        - ip link set vni10010 mtu 9500
+        - ip link set vni10010 master br10 addrgenmode none
+        - ip link set vni10010 type bridge_slave neigh_suppress on learning off
+        - ip link set vni10010 up
+        - ip link add link eth2 name eth2.10 type vlan id 10
+        - ip link set eth2.10 master br10
+        - ip link set eth2.10 up
+        - ip link set eth2 up
+        - ip link set br10 master TENANT-A
+        - ip link set br10 addr 00:00:5e:00:01:01
+        - ip addr add 10.0.10.1/24 dev br10
+        - ip link set br4000 master TENANT-A
+        - ip link set br4000 addr 00:00:5e:00:40:03
+ 
+    ### Client ###
+    host-a:
+      binds:
+        - config/host-a.conf:/etc/frr/frr.conf
+      exec:
+        - ip route del default
+        - ip addr del 127.0.0.1/8 dev lo
+        - ip link add link eth1 name eth1.10 type vlan id 10
+        - ip link set dev eth1.10 up
+        - ip link set dev eth1.10 address 02:00:00:0a:00:01
+        - ip addr add dev eth1.10 10.0.10.11/24
+        - ip route add default via 10.0.10.1
+ 
+    host-b:
+      binds:
+        - config/host-b.conf:/etc/frr/frr.conf
+      exec:
+        - ip route del default
+        - ip addr del 127.0.0.1/8 dev lo
+        - ip link add link eth1 name eth1.20 type vlan id 20
+        - ip link set dev eth1.20 up
+        - ip link set dev eth1.20 address 02:00:00:14:00:02
+        - ip addr add dev eth1.20 10.0.20.22/24
+        - ip route add default via 10.0.20.1
+ 
+    host-c:
+      binds:
+        - config/host-c.conf:/etc/frr/frr.conf
+      exec:
+        - ip route del default
+        - ip addr del 127.0.0.1/8 dev lo
+        - ip link add link eth1 name eth1.10 type vlan id 10
+        - ip link set dev eth1.10 up
+        - ip link set dev eth1.10 address 02:00:00:0a:00:03
+        - ip addr add dev eth1.10 10.0.10.33/24
+        - ip route add default via 10.0.10.1
+ 
+  links:
+    - endpoints: [ spine1:eth1, leaf1:eth1 ]
+    - endpoints: [ spine1:eth2, leaf2:eth1 ]
+    - endpoints: [ spine1:eth3, leaf3:eth1 ]
+    - endpoints: [ leaf1:eth2, host-a:eth1 ]
+    - endpoints: [ leaf2:eth2, host-b:eth1 ]
+    - endpoints: [ leaf3:eth2, host-c:eth1 ]
+ 
